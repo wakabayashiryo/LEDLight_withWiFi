@@ -89,9 +89,9 @@ void loop(void)
   client.flush();
 
   // Prepare the response
-  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\nGPIO is now ";
+  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML><html>GPIO is now ";
   s += (val) ? "high" : "low";
-  s += "</html>\n";
+  s += "</html>";
 
   // Send the response to the client
   client.print(s);
