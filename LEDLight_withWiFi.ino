@@ -66,18 +66,42 @@ void setup(void)
 
 void root(void)
 {
-  String s = "<!DOCTYPE HTML><html>";
-  s += "<html>";
-  s += "<header>";
-  s += "<title>ESP8266 test page</title>";
-  s += "</header>";
-  s += "<body>";
-  s += "<form action='http://LED_WIFI.local/off' method='get'>";
-  s += "<button name='test' value='submit'>";
-  s += "</form>";
-  s += "</body>";
-  s += "</html>";
-  server.send(200,"text/html",s);
+  String s = server.arg("Status");
+  int val1 = server.arg("blight1").toInt();
+  int val2 = server.arg("blight2").toInt();
+   if (s == "on")
+    {
+       analogWrite(PWMOUT1, val1);
+       analogWrite(PWMOUT2, val2);
+     } 
+     else
+     {
+       analogWrite(PWMOUT1, val1);
+       analogWrite(PWMOUT2, val2);
+     }
+  char temp[2000];
+  snprintf(temp, 2000,
+
+ "<html>\
+  <head>\
+    <!--<meta http-equiv='refresh' content='5'/>-->\
+    <title>ESP8266 test page</title>\
+    <style>\
+      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+    </style>\
+  </head>\
+  <body>\
+    <form action='http://LED_WIFI.local' method='post'>\
+        <input type='radio' name='Status'value='on' />\
+        <input type='range' name='blight1' max='255' min='0' value='0'/><br>\
+        <input type='radio' name='Status'value='off'/>\
+        <input type='range' name='blight2' max='255' min='0' value='0'/><br>\
+        <input type='submit' value='send'>\
+    </form>\
+</body>\
+</html>");
+
+  server.send(200,"text/html",temp);
 }
 
 void on_LED(void)
