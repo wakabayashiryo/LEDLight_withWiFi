@@ -1,11 +1,14 @@
 #include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 
-const char* ssid = "aterm-912afc-g";
-const char* password = "39f9398943819";
+const char* ssid = "4CE676F701EA";
+const char* password = "116mt8vyhx91w";
 
 // Create an instance of the server
 // specify the port to listen on as an argument
-WiFiServer server(80);
+ESP8266WebServer server(80);
 
 #define BLUELED  4
 #define REDLED    5
@@ -30,6 +33,7 @@ void setup(void)
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) 
@@ -40,12 +44,19 @@ void setup(void)
   Serial.println("");
   Serial.println("WiFi connected");
 
-  // Start the server
-  server.begin();
-  Serial.println("Server started");
-
   // Print the IP address
   Serial.println(WiFi.localIP());
+  
+  if(MDNS.begin("LED_WIFI"))
+      Serial.println("MDNS responder started\nLet's access http://LED_WIFI.local");
+
+  // Start the server
+  server.on("/",root);
+  server.on("/on",on_LED);
+  server.on("/off",off_LED);
+  server.begin();
+  Serial.println ( "HTTP server started" );
+  
 }
 
 //    digitalWrite(BLUELED,HIGH);
@@ -53,53 +64,38 @@ void setup(void)
 //    analogWrite(PWMOUT1,i);    max value 0xFF
 //    analogWrite(PWMOUT2,i);
 
+void root(void)
+{
+  String s = "<!DOCTYPE HTML><html>";
+  s += "<html>";
+  s += "<header>";
+  s += "<title>ESP8266 test page</title>";
+  s += "</header>";
+  s += "<body>";
+  s += "<form action='http://LED_WIFI.local/off' method='get'>";
+  s += "<button name='test' value='submit'>";
+  s += "</form>";
+  s += "</body>";
+  s += "</html>";
+  server.send(200,"text/html",s);
+}
+
+void on_LED(void)
+{
+  // Set GPIO2 according to the request
+  analogWrite(PWMOUT1, 255);
+  analogWrite(PWMOUT2, 255);
+}
+
+void off_LED(void)
+{
+  // Set GPIO2 according to the request
+  analogWrite(PWMOUT1, 0);
+  analogWrite(PWMOUT2, 0);
+}
 void loop(void)
 {
-  // Check if a client has connected
-  WiFiClient client = server.available();
-  if (!client)return;
-  
-
-  // Wait until the client sends some data
-  Serial.println("new client");
-  while (!client.available())delay(1);
-
-  // Read the first line of the request
-  String req = client.readStringUntil('\r');
-  Serial.println(req);
-  client.flush();
-
-  // Match the request
-  int val;
-  if (req.indexOf("/gpio/0") != -1)
-    val = 0;
-  else if (req.indexOf("/gpio/1") != -1)
-    val = 1;
-  else 
-  {
-    Serial.println("invalid request");
-    client.stop();
-    return;
-  }
-
-  // Set GPIO2 according to the request
-  analogWrite(PWMOUT1, val*255);
-  analogWrite(PWMOUT2, val*255);
-
-  client.flush();
-
-  // Prepare the response
-  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML><html>GPIO is now ";
-  s += (val) ? "high" : "low";
-  s += "</html>";
-
-  // Send the response to the client
-  client.print(s);
-  delay(1);
-  Serial.println("Client disonnected");
-
-  // The client will actually be disconnected
-  // when the function returns and 'client' object is detroyed
+  server.handleClient();
 
 }
 
